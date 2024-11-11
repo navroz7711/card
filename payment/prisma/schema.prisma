@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Status{
+    success
+    pending
+    failed
+}
+
+enum Action{
+  increment
+  decrement
+}
+
+model User{
+  id           String @db.Uuid
+  fullname     String @map("fullname") @db.VarChar(64)
+  phone     String @map("phone") @db.VarChar(32) @unique
+  dateOfBirth  DateTime @map("date_of_birth") 
+
+  createdAt    DateTime @map("created_at") @default(now())
+  updatedAt    DateTime @map("updated_at") @updatedAt
+
+  balance Balance[]
+  payment Payment[]
+  history History[]
+
+  @@id([id])
+  @@map("users")
+}
+
+model Balance{
+  id             String @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  currentBalance Int @map("current_balance") @default(0)
+  currency       String @map("currency") @default("UZS") 
+  userId         String @map("user_id") @db.Uuid
+
+  user User @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: Cascade)
+
+  createdAt    DateTime @map("created_at") @default(now())
+  updatedAt    DateTime @map("updated_at") @updatedAt
+
+  @@id([id])
+  @@map("balance")
+}
+
+model Payment{
+  id             String @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  amount         Float @map("amount") 
+  currency       String @map("currency") @db.VarChar(32)
+  paymentMethod  String @map("payment_method") @db.VarChar(32)
+  status         Status
+  userId         String @map("user_id") @db.Uuid
+
+  user User @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: Cascade) 
+
+  createdAt    DateTime @map("created_at") @default(now())
+  updatedAt    DateTime @map("updated_at") @updatedAt
+
+  history History[]
+
+  @@id([id])
+  @@map("payment")
+}
+
+model History{
+  id             String @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  amount         Float @map("amount") 
+  currency       String @map("currency") @db.VarChar(32)
+  paymentMethod  String @map("payment_method") @db.VarChar(32)
+  status         Status
+  action         Action
+  userId         String @map("user_id") @db.Uuid
+  paymentId      String @map("payment_id") @db.Uuid
+
+  user User @relation(fields: [userId], references: [id], onUpdate: NoAction, onDelete: Cascade)
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  createdAt    DateTime @map("created_at") @default(now())
+  updatedAt    DateTime @map("updated_at") @updatedAt
+
+  @@id([id])
+  @@map("history")
+}

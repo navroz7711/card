@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Status{
+  sent
+  failed
+}
+
+model NotifyAll{
+  id             String @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  message        String @map("message") @db.Text
+  status         Status
+  view           Int @map("view") @default(0)
+  like           Int @map("like") @default(0)
+
+  createdAt      DateTime @map("created_at") @default(now())
+  updatedAt      DateTime @map("updated_at") @updatedAt
+
+  notifyView NotifyView[]
+
+  @@id([id])
+  @@map("notify_all")
+}
+
+model NotifyOne{
+  id             String @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  message        String @map("message") @db.Text
+  status         Status
+
+  userId         String @db.Uuid
+
+  createdAt      DateTime @map("created_at") @default(now())
+  updatedAt      DateTime @map("updated_at") @updatedAt
+
+  @@id([id])
+  @@map("notify_one")
+}
+
+model NotifyView{
+  id             String @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String @db.Uuid
+  notificationId String @db.Uuid
+
+  createdAt      DateTime @default(now())
+
+  notifyAll NotifyAll @relation(fields: [notificationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([id])
+  @@map("notify_view")
+}
